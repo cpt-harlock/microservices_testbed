@@ -4,6 +4,7 @@ K3S_MASTER=master
 VM_PREF=k3swork
 CPU=3
 MEM=4G
+STOR=10G
 usage() {
 	echo "./multipass_script.sh <machine_count>"
 }
@@ -28,12 +29,12 @@ create_vm() {
 	done
 	echo "ubuntu:ubuntu" > temp_pwd
 	# master section
-	multipass launch -c ${CPU} -m ${MEM} --name ${K3S_MASTER}
+	multipass launch -c ${CPU} -m ${MEM} -d ${STOR} --name ${K3S_MASTER}
 	multipass exec ${K3S_MASTER} sudo chpasswd < temp_pwd
 	# worker section
 	# create machines and set password 
 	for i in $(seq 1 ${1}); do
-		multipass launch -c ${CPU} -m ${MEM} --name ${VM_PREF}${i}
+		multipass launch -c ${CPU} -m ${MEM} -d ${STOR} --name ${VM_PREF}${i}
 		multipass exec ${VM_PREF}${i} sudo chpasswd < temp_pwd
 	done
 }
@@ -59,6 +60,18 @@ install_istio() {
 	multipass exec ${K3S_MASTER} -- bash --login -c "cd \$(ls | egrep istio); kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml"
 }
 
+
+install_ebpf() {
+	multipass exec ${K3S_MASTER} -- bash -c " sudo apt-get update && sudo apt-get install -y build-essential git cmake zlib1g-dev libevent-dev libelf-dev llvm clang libc6-dev-i386 "
+	multipass exec ${K3S_MASTER} -- bash -c " sudo apt-get install -y libbpf* "
+	multipass exec ${K3S_MASTER} -- bash -c " sudo apt-get install -y python3-bpfcc "
+	for i in $(seq 1 ${1}); do
+		multipass exec ${VM_PREF}$i -- bash -c " sudo apt-get update && sudo apt-get install -y build-essential git cmake zlib1g-dev libevent-dev libelf-dev llvm clang libc6-dev-i386 "
+		multipass exec ${VM_PREF}$i -- bash -c " sudo apt-get install -y libbpf* "
+		multipass exec ${VM_PREF}$i -- bash -c " sudo apt-get install -y python3-bpfcc "
+	done
+}
+
 if [[ $# != 1 ]]; then
 	usage
 	exit
@@ -70,5 +83,6 @@ create_vm $1
 deploy_k3s $1
 # install istio
 install_istio
-
+# install ebpf 
+install_ebpf $1
 
