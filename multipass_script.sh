@@ -72,6 +72,17 @@ install_ebpf() {
 	done
 }
 
+deploy_ebpf() {
+	multipass exec ${K3S_MASTER} -- bash -c " sudo apt-get update && sudo apt-get install -y build-essential git cmake zlib1g-dev libevent-dev libelf-dev llvm clang libc6-dev-i386 "
+	multipass exec ${K3S_MASTER} -- bash -c " sudo apt-get install -y libbpf* "
+	multipass exec ${K3S_MASTER} -- bash -c " sudo apt-get install -y python3-bpfcc "
+	for i in $(seq 1 ${1}); do
+		multipass exec ${VM_PREF}$i -- bash -c " sudo apt-get update && sudo apt-get install -y build-essential git cmake zlib1g-dev libevent-dev libelf-dev llvm clang libc6-dev-i386 "
+		multipass exec ${VM_PREF}$i -- bash -c " sudo apt-get install -y libbpf* "
+		multipass exec ${VM_PREF}$i -- bash -c " sudo apt-get install -y python3-bpfcc "
+	done
+}
+
 if [[ $# != 1 ]]; then
 	usage
 	exit
@@ -85,4 +96,6 @@ deploy_k3s $1
 install_istio
 # install ebpf 
 install_ebpf $1
+# run an ebpf container
+deploy_ebpf $1
 
