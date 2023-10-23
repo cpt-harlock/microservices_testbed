@@ -1,12 +1,15 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: private-reg
+  name: ebpf
 spec:
   containers:
-  - name: private-reg-container
-    image: and22591/ebpf-docker-image:latest
-  imagePullSecrets:
-  - name: regcred
+  - name: ebpf-container
+    image: docker.io/and22591/ebpf-docker-image:latest
+    command: ["/bin/sh","-c"]
+    args: ["mount -t debugfs none /sys/kernel/debug && cd libbpf-bootstrap/examples/c && ./minimal"]
+      #args: ["mount -t debugfs none /sys/kernel/debug", "cd libbpf-bootstrap/examples/c && ./minimal"]
+    securityContext:
+      privileged: true
 
 
