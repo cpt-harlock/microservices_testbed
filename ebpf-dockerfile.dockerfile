@@ -4,7 +4,8 @@ RUN apt-get update && \
     apt-get install -y build-essential git cmake \
                        zlib1g-dev libevent-dev \
                        libelf-dev llvm \
-                       clang libc6-dev-i386
+                       clang libc6-dev-i386 \
+                       pkgconf
 
 RUN mkdir /src && \
     git init
@@ -30,6 +31,6 @@ RUN git clone --depth 1 https://github.com/gregkh/linux.git && \
     cp linux/include/uapi/linux/bpf* /usr/include/linux/
 
 RUN cd libbpf-bootstrap/examples/c && \
-    make minimal
+    make APPS=minimal_ns
 
 
